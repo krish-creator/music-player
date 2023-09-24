@@ -1,13 +1,17 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './PlayerComponent.scss';
 import ringer from '../../assets/tracks/track1/track1.mp3';
 import album1 from '../../assets/tracks/track1/albumArt.jpg'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import trackList from '../../_trackList';
 
 
 const PlayerComponent = () => {
     const [isHidden, setHidden] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [track, setTrack] = useState(ringer)
+    const [album, setAlbum] = useState(album1)
+    const [trackName, setTrackName] = useState("FirstTrack")
     const audioRef = useRef(null);
 
     const [volume, setVolume] = useState(1);
@@ -24,7 +28,7 @@ const PlayerComponent = () => {
     };
 
     if (!audioRef.current) {
-        audioRef.current = new Audio(ringer);
+        audioRef.current = new Audio(track);
         audioRef.current.loop = true;
         audioRef.current.volume = volume;
     }
@@ -43,20 +47,39 @@ const PlayerComponent = () => {
         audioRef.current.volume = newMuted ? 0 : volume;
     };
 
+    const nextTrack = () => {
+        setAlbum(trackList[1].albumArt);
+        setTrack(trackList[1].trackLink);
+        setTrackName(trackList[1].trackName);
+    }
+
+    const prevTrack = () => {
+        setAlbum(trackList[0].albumArt);
+        setTrack(trackList[0].trackLink);
+        setTrackName(trackList[0].trackName);
+    }
+
+    useEffect(() => {
+        console.log(trackList[1].albumArt);
+    }, [])
+
     return (
         <div className='player'>
-            <div className='album-art' style={{ backgroundImage: `url(${album1})` }}>
-                <div className="fake-player">
-                    <button
-                        role="play"
-                        className={`play d-${isHidden ? "none" : "block"}`}
-                        onClick={togglePlayback}
-                    ></button>
-                    <button
-                        role="pause"
-                        className={`pause ${isHidden ? "block" : "none"}`}
-                        onClick={togglePlayback}
-                    ></button>
+            <div className='album-art' style={{ backgroundImage: `url(${album})` }}>
+                <div className='fake-player'>
+                    {isPlaying ? (
+                        <button
+                            role="pause"
+                            className="btn pause"
+                            onClick={togglePlayback}
+                        ></button>
+                    ) : (
+                        <button
+                            role="play"
+                            className="btn play"
+                            onClick={togglePlayback}
+                        ></button>
+                    )}
                 </div>
             </div>
 
@@ -69,16 +92,21 @@ const PlayerComponent = () => {
                     value={volume}
                     onChange={handleVolumeChange}
                 />
-                <button onClick={toggleMute} className='ms-2'>
-                    <div className='d-flex flex-row'>
-                        <div className='d-none'><FontAwesomeIcon icon="fa-solid fa-volume-xmark" /></div>
-                        <div><FontAwesomeIcon icon="fa-solid fa-volume-high" /></div>
-                        <div> {muted ? "Muted" : "Unmuted"} </div>
-                    </div>
+                <button onClick={toggleMute} className='btn'>
+                    {
+                        muted
+                            ? <FontAwesomeIcon icon="fa-solid fa-volume-xmark" />
+                            : <FontAwesomeIcon icon="fa-solid fa-volume-high" />
+                    }
                 </button>
             </section>
 
-            <strong>Track Name</strong>
+            <div>
+                <button onClick={prevTrack} className='btn'><FontAwesomeIcon icon="fa-solid fa-caret-left" /></button>
+                <strong>{trackName}</strong>
+                <button onClick={nextTrack} className='btn'><FontAwesomeIcon icon="fa-solid fa-caret-right" /></button>
+            </div>
+
         </div >
     );
 };
