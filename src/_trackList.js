@@ -7,14 +7,14 @@ const trackList = [
     {
         trackId: 1,
         trackName: "FirstTrack",
-        trackLink: { track1 },
-        albumArt: { album1 }
+        trackLink: track1,
+        albumArt: album1
     },
     {
         trackId: 2,
         trackName: "SecondTrack",
-        trackLink: { track2 },
-        albumArt: { album2 }
+        trackLink: track2,
+        albumArt: album2
     },
 ]
 
