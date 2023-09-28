@@ -1,85 +1,148 @@
-import React, { useState, useRef, useEffect } from 'react';
-import './PlayerComponent.scss';
+import React, { useState, useRef, useEffect } from 'react'
+import './PlayerComponent.scss'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import trackList from '../../_trackList';
-
+import trackList from '../../_trackList'
+import repeat from '../../assets/images/repeat.png'
 
 const PlayerComponent = () => {
-    const [isHidden, setHidden] = useState(false);
-    const [isPlaying, setIsPlaying] = useState(false);
+    const [isHidden, setHidden] = useState(false)
+    const [isPlaying, setIsPlaying] = useState(false)
 
     const [currentTrack, setCurrentTrack] = useState({
         trackId: trackList[0].trackId,
         trackName: trackList[0].trackName,
         trackLink: trackList[0].trackLink,
         albumArt: trackList[0].albumArt,
-        loop: false,
-        repeat: false
     })
 
-    const [volume, setVolume] = useState(1);
-    const [muted, setMuted] = useState(false);
+    const [currentTrackIndex, setCurrentTrackIndex] = useState(0)
 
-    const audioRef = useRef(null);
+    const [duration, setDuration] = useState(0)
+    const [currentTime, setCurrentTime] = useState(0)
+
+    const [volume, setVolume] = useState(1)
+    const [muted, setMuted] = useState(false)
+    const [loop, setLoop] = useState(false)
+    const [shuffle, setShuffle] = useState(false)
+
+    const audioRef = useRef(null)
 
     const togglePlayback = () => {
-        setHidden(!isHidden);
+        setHidden(!isHidden)
         if (isPlaying) {
-            audioRef.current.pause();
+            audioRef.current.pause()
         } else {
-            audioRef.current.play();
+            audioRef.current.play()
         }
-        setIsPlaying(!isPlaying);
-    };
+        setIsPlaying(!isPlaying)
+    }
 
     useEffect(() => {
-        audioRef.current = new Audio(currentTrack.trackLink);
-        audioRef.current.loop = currentTrack.loop;
-        audioRef.current.volume = volume;
-    }, [currentTrack, volume, audioRef])
+        audioRef.current = new Audio(currentTrack.trackLink)
+        audioRef.current.id = currentTrack.trackId
+        audioRef.current.volume = volume
 
+        audioRef.current.addEventListener('loadedmetadata', () => {
+            setDuration(audioRef.current.duration)
+        })
+
+        audioRef.current.addEventListener('timeupdate', () => {
+            setCurrentTime(audioRef.current.currentTime)
+        })
+
+        audioRef.current.addEventListener('ended', () => {
+            if (loop) {
+                audioRef.current.currentTime = 0
+                audioRef.current.play()
+            } else {
+                setIsPlaying(false)
+                setHidden(false)
+            }
+        })
+
+        setCurrentTrackIndex(trackList.findIndex(
+            (track) => track.trackId === currentTrack.trackId
+        ))
+        // eslint-disable-next-line
+    }, [currentTrack, audioRef])
 
     const handleVolumeChange = (event) => {
-        const newVolume = event.target.valueAsNumber;
-        setVolume(newVolume);
-        audioRef.current.volume = muted ? 0 : newVolume;
-    };
+        const newVolume = event.target.valueAsNumber
+        setVolume(newVolume)
+        audioRef.current.volume = muted ? 0 : newVolume
+    }
+
+    const handleTrackDurationChange = (event) => {
+        const newPosition = event.target.valueAsNumber
+        audioRef.current.currentTime = newPosition
+        setCurrentTime(newPosition)
+    }
 
     const toggleMute = () => {
-        const newMuted = !muted;
-        setMuted(newMuted);
-        audioRef.current.volume = newMuted ? 0 : volume;
-    };
+        const newMuted = !muted
+        setMuted(newMuted)
+        audioRef.current.volume = newMuted ? 0 : volume
+    }
 
     const nextTrack = () => {
-        setCurrentTrack(
-            {
-                trackId: trackList[1].trackId,
-                trackName: trackList[1].trackName,
-                trackLink: trackList[1].trackLink,
-                albumArt: trackList[1].albumArt
+        if (isPlaying) {
+            audioRef.current.pause()
+        }
+        setIsPlaying(false)
+        setHidden(false)
+
+        setCurrentTrack((prevState) => {
+            const nextIndex = currentTrackIndex + 1
+            if (nextIndex < trackList.length) {
+                return {
+                    trackId: trackList[nextIndex].trackId,
+                    trackName: trackList[nextIndex].trackName,
+                    trackLink: trackList[nextIndex].trackLink,
+                    albumArt: trackList[nextIndex].albumArt
+                }
             }
-        )
+            return prevState
+        })
     }
 
     const prevTrack = () => {
-        setCurrentTrack(
-            {
-                trackId: trackList[0].trackId,
-                trackName: trackList[0].trackName,
-                trackLink: trackList[0].trackLink,
-                albumArt: trackList[0].albumArt
+        if (isPlaying) {
+            audioRef.current.pause()
+        }
+        setIsPlaying(false)
+        setHidden(false)
+
+        setCurrentTrack((prevState) => {
+            const prevIndex = currentTrackIndex - 1
+            if (prevIndex >= 0) {
+                return {
+                    trackId: trackList[prevIndex].trackId,
+                    trackName: trackList[prevIndex].trackName,
+                    trackLink: trackList[prevIndex].trackLink,
+                    albumArt: trackList[prevIndex].albumArt
+                }
             }
-        )
+            return prevState
+        })
+    }
+
+    const toggleLoop = () => {
+        setLoop(!loop)
+        audioRef.current.loop = !loop
+    }
+
+    const toggleShuffle = () => {
+        setShuffle(!shuffle)
     }
 
     useEffect(() => {
-        console.log(audioRef);
-    }, [currentTrack])
+        console.log(audioRef, duration, isHidden, loop)
+        // eslint-disable-next-line
+    }, [currentTrack, currentTrackIndex, duration, loop])
 
     return (
         <>
-            <div className='player'>
+            <div className='player border'>
                 <div className='album-art' style={{ backgroundImage: `url(${currentTrack.albumArt})` }}>
                     <div className='my-player'>
                         {isPlaying ? (
@@ -95,18 +158,28 @@ const PlayerComponent = () => {
                         )}
                     </div>
                 </div>
-                <section className='d-flex justify-content-center align-items-center'>
+
+                <section className='d-flex'>
+                    <div>
+                        {currentTime ? (currentTime / 100).toFixed(2) : 0}
+                    </div>
                     <input
                         type="range"
                         min={0}
-                        max={1}
-                        step={0.02}
-                        value={volume}
-                        onChange={handleVolumeChange}
+                        max={duration}
+                        step={1}
+                        value={currentTime}
+                        onChange={handleTrackDurationChange}
                     />
+                    <div>
+                        {duration ? ((currentTime - duration) / 100).toFixed(2) : 0}
+                    </div>
                 </section>
 
-                <section className='d-flex justify-content-center align-items-center'>
+                <section className='d-flex'>
+                    <div className='p-2'>
+                        <FontAwesomeIcon icon="fa-solid fa-volume-low" />
+                    </div>
                     <input
                         type="range"
                         min={0}
@@ -125,14 +198,25 @@ const PlayerComponent = () => {
                 </section>
 
                 <div>
+                    {
+                        shuffle
+                            ? <button onClick={toggleShuffle} className='btn'><FontAwesomeIcon icon="fa-solid fa-shuffle" /></button>
+                            : <button onClick={toggleShuffle} className='btn'><FontAwesomeIcon icon="fa-solid fa-arrow-right-long" /></button>
+                    }
+
                     <button onClick={prevTrack} className='btn'><FontAwesomeIcon icon="fa-solid fa-caret-left" /></button>
                     <strong>{currentTrack.trackName}</strong>
                     <button onClick={nextTrack} className='btn'><FontAwesomeIcon icon="fa-solid fa-caret-right" /></button>
+                    {
+                        loop
+                            ? <button onClick={toggleLoop} className='btn'><img src={repeat} alt="repeat-1-icon" className='img-fluid' height={21} width={21} /></button>
+                            : <button onClick={toggleLoop} className='btn'><FontAwesomeIcon icon="fa-solid fa-repeat" /></button>
+                    }
                 </div>
 
             </div >
         </>
-    );
-};
+    )
+}
 
-export default PlayerComponent;
+export default PlayerComponent
