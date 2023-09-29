@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react'
 import './PlayerComponent.scss'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import trackList from '../../_trackList'
+import trackListOg from '../../_trackList'
 import repeat from '../../assets/images/repeat.png'
 
 const PlayerComponent = () => {
     const [isHidden, setHidden] = useState(false)
     const [isPlaying, setIsPlaying] = useState(false)
+    const [trackList, setTrackList] = useState(trackListOg)
 
     const [currentTrack, setCurrentTrack] = useState({
         trackId: trackList[0].trackId,
@@ -36,6 +37,16 @@ const PlayerComponent = () => {
         }
         setIsPlaying(!isPlaying)
     }
+
+    useEffect(() => {
+        setCurrentTrack({
+            trackId: trackList[0].trackId,
+            trackName: trackList[0].trackName,
+            trackLink: trackList[0].trackLink,
+            albumArt: trackList[0].albumArt,
+        })
+    }, [trackList])
+
 
     useEffect(() => {
         audioRef.current = new Audio(currentTrack.trackLink)
@@ -131,17 +142,34 @@ const PlayerComponent = () => {
         audioRef.current.loop = !loop
     }
 
+    const shuffleArr = (array) => {
+        return array.map((a) => ({ sort: Math.random(), value: a }))
+            .sort((a, b) => a.sort - b.sort)
+            .map((a) => a.value)
+    }
+
     const toggleShuffle = () => {
         setShuffle(!shuffle)
+        if (!shuffle) {
+            if (isPlaying) {
+                const shuffledTracks = shuffleArr(trackList.filter(track => track.trackId !== currentTrack.trackId))
+                setTrackList([currentTrack, ...shuffledTracks])
+            } else {
+                const shuffledTracks = shuffleArr(trackList)
+                setTrackList(shuffledTracks)
+            }
+        } else {
+            setTrackList(trackListOg)
+        }
     }
 
     useEffect(() => {
-        console.log(audioRef, duration, isHidden, loop)
+        console.log(shuffle, trackList)
         // eslint-disable-next-line
-    }, [currentTrack, currentTrackIndex, duration, loop])
+    }, [currentTrack, currentTrackIndex, duration, loop, trackList])
 
     return (
-        <>
+        <div className='container-fluid p-0'>
             <div className='player border'>
                 <div className='album-art' style={{ backgroundImage: `url(${currentTrack.albumArt})` }}>
                     <div className='my-player'>
@@ -166,7 +194,7 @@ const PlayerComponent = () => {
                     <input
                         type="range"
                         min={0}
-                        max={duration}
+                        max={duration.toString()}
                         step={1}
                         value={currentTime}
                         onChange={handleTrackDurationChange}
@@ -215,7 +243,7 @@ const PlayerComponent = () => {
                 </div>
 
             </div >
-        </>
+        </div>
     )
 }
 

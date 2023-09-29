@@ -16,6 +16,18 @@ const trackList = [
         trackLink: track2,
         albumArt: album2
     },
+    {
+        trackId: 3,
+        trackName: "ThirdTrack",
+        trackLink: track1,
+        albumArt: album1
+    },
+    {
+        trackId: 4,
+        trackName: "FourthTrack",
+        trackLink: track2,
+        albumArt: album2
+    },
 ]
 
 export default trackList
