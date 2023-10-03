@@ -3,11 +3,17 @@ import './PlayerComponent.scss'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import trackListOg from '../../_trackList'
 import repeat from '../../assets/images/repeat.png'
+import { useParams, useNavigate } from "react-router-dom"
 
 const PlayerComponent = () => {
+
+    const params = useParams()
+    const navigate = new useNavigate()
+
     const [isHidden, setHidden] = useState(false)
     const [isPlaying, setIsPlaying] = useState(false)
     const [trackList, setTrackList] = useState(trackListOg)
+    const [trackId, setTrackId] = useState(1)
 
     const [currentTrack, setCurrentTrack] = useState({
         trackId: trackList[0].trackId,
@@ -39,13 +45,17 @@ const PlayerComponent = () => {
     }
 
     useEffect(() => {
+        setTrackId(params.trackId ? params.trackId : '1')
+    }, [params.trackId])
+
+    useEffect(() => {
         setCurrentTrack({
-            trackId: trackList[0].trackId,
-            trackName: trackList[0].trackName,
-            trackLink: trackList[0].trackLink,
-            albumArt: trackList[0].albumArt,
+            trackId: trackList[currentTrackIndex].trackId,
+            trackName: trackList[currentTrackIndex].trackName,
+            trackLink: trackList[currentTrackIndex].trackLink,
+            albumArt: trackList[currentTrackIndex].albumArt,
         })
-    }, [trackList])
+    }, [trackList, currentTrackIndex, trackId])
 
 
     useEffect(() => {
@@ -71,11 +81,17 @@ const PlayerComponent = () => {
             }
         })
 
-        setCurrentTrackIndex(trackList.findIndex(
-            (track) => track.trackId === currentTrack.trackId
-        ))
+        console.log(
+            typeof (trackId)
+        );
+
+        setCurrentTrackIndex(
+            trackId
+                ? trackList.findIndex((track) => track.trackId === Number(trackId))
+                : 1
+        )
         // eslint-disable-next-line
-    }, [currentTrack, audioRef])
+    }, [currentTrack, audioRef, trackId])
 
     const handleVolumeChange = (event) => {
         const newVolume = event.target.valueAsNumber
@@ -102,8 +118,9 @@ const PlayerComponent = () => {
         setIsPlaying(false)
         setHidden(false)
 
+        const nextIndex = currentTrackIndex + 1
+
         setCurrentTrack((prevState) => {
-            const nextIndex = currentTrackIndex + 1
             if (nextIndex < trackList.length) {
                 return {
                     trackId: trackList[nextIndex].trackId,
@@ -114,6 +131,11 @@ const PlayerComponent = () => {
             }
             return prevState
         })
+
+        if (nextIndex < trackList.length) {
+            navigate(`/player/${trackList[nextIndex].trackId}`)
+        }
+
     }
 
     const prevTrack = () => {
@@ -123,8 +145,9 @@ const PlayerComponent = () => {
         setIsPlaying(false)
         setHidden(false)
 
+        const prevIndex = currentTrackIndex - 1
+
         setCurrentTrack((prevState) => {
-            const prevIndex = currentTrackIndex - 1
             if (prevIndex >= 0) {
                 return {
                     trackId: trackList[prevIndex].trackId,
@@ -135,6 +158,11 @@ const PlayerComponent = () => {
             }
             return prevState
         })
+
+        if (prevIndex >= 0) {
+            navigate(`/player/${trackList[prevIndex].trackId}`)
+        }
+
     }
 
     const toggleLoop = () => {
@@ -164,9 +192,9 @@ const PlayerComponent = () => {
     }
 
     useEffect(() => {
-        console.log(shuffle, trackList)
+        console.log(trackId, currentTrackIndex)
         // eslint-disable-next-line
-    }, [currentTrack, currentTrackIndex, duration, loop, trackList])
+    }, [currentTrack, currentTrackIndex, duration, loop, trackList, trackId])
 
     return (
         <div className='container-fluid p-0'>
